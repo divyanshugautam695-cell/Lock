@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LinkUnlock Inspector</title>
+<style>
+:root{color-scheme:dark;--bg:#090b10;--panel:#121722;--line:#263244;--muted:#98a6bb;--text:#edf3ff;--accent:#8bb8ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#17243b 0,#090b10 55%);color:var(--text);font:16px system-ui,sans-serif;min-height:100vh;padding:28px 16px}
+main{max-width:760px;margin:5vh auto}.tag{color:var(--accent);font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+h1{font-size:clamp(30px,7vw,48px);margin:10px 0}p{color:var(--muted);line-height:1.6}.panel{background:#121722eF;border:1px solid var(--line);border-radius:20px;padding:22px;margin-top:24px;box-shadow:0 20px 70px #0006}
+input,textarea{width:100%;background:#090e17;border:1px solid var(--line);border-radius:12px;color:var(--text);padding:15px;font:inherit;outline:none}
+button{margin-top:12px;background:var(--accent);color:#07101f;border:0;border-radius:12px;padding:13px 20px;font-weight:750;font-size:15px;width:100%}
+button:disabled{opacity:.55}.result{white-space:pre-wrap;overflow-wrap:anywhere;background:#090e17;border:1px solid var(--line);border-radius:12px;padding:15px;margin-top:16px;min-height:50px}
+a{color:var(--accent)}small{color:var(--muted)}.warning{border-left:3px solid #d5a84f;padding-left:12px;margin-top:18px}
+</style></head>
+<body><main>
+<div class="tag">Public redirect inspector</div>
+<h1>LinkUnlock Inspector</h1>
+<p>Check publicly visible redirects and scan returned page HTML for exposed links. This tool does not complete surveys, install apps, bypass access controls, or reveal server-side hidden destinations.</p>
+<section class="panel">
+<label for="url">SpeedyLinks URL</label>
+<input id="url" type="url" placeholder="https://speedy-links.com/s/..." autocomplete="url">
+<button id="go">Inspect public page</button>
+<div id="result" class="result" aria-live="polite">Results will appear here.</div>
+<p class="warning"><small>Safety: only the SpeedyLinks host is fetched. External redirects are shown but not followed. Do not open unfamiliar links or download unknown files.</small></p>
+</section>
+<section class="panel">
+<h2>Scan copied page source</h2>
+<p>Paste text or HTML you already have. Scanning happens in your browser.</p>
+<textarea id="source" rows="6" placeholder="Paste copied page text or HTML here…"></textarea>
+<button id="scan" type="button">Find visible links</button>
+<div id="local" class="result">No scan yet.</div>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+$("go").addEventListener("click",async()=>{
+ const url=$("url").value.trim(); if(!url){$("result").textContent="Enter a URL first.";return}
+ $("go").disabled=true;$("result").textContent="Inspecting…";
+ try{
+  const r=await fetch("/api/inspect",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({url})});
+  const data=await r.json(); if(!r.ok)throw new Error(data.error||"Request failed");
+  $("result").textContent=JSON.stringify(data,null,2);
+ }catch(e){$("result").textContent="Error: "+e.message}
+ finally{$("go").disabled=false}
+});
+$("scan").addEventListener("click",()=>{
+ const text=$("source").value;const matches=[...text.matchAll(/https?:\/\/[^\s"'<>]+/gi)].map(m=>m[0].replace(/[),.;]+$/,""));
+ const unique=[...new Set(matches)];const mega=unique.filter(x=>/mega\.nz/i.test(x));
+ $("local").textContent=unique.length?("Found links:\n"+unique.join("\n")+"\n\nMEGA links:\n"+(mega.join("\n")||"None found")):"No visible links found.";
+});
+</script></body></html>
