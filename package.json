@@ -1,0 +1,10 @@
+{
+  "name": "linkunlock-inspector",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A safe inspector for publicly visible SpeedyLinks redirects and page content.",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": { "express": "^4.21.2" }
+}
